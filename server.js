@@ -1,4 +1,4 @@
-const url = require('node:url');
+const url = require('url');
 const http = require("http");
 const PORT = process.env.PORT || 8080;
 const posts = require("./data");
@@ -23,8 +23,6 @@ const product = {
   pid: 5, proname: "pr5",
 }
 
-
-
 const server = http.createServer((request, response) => {
   request.posts = posts;
 
@@ -37,12 +35,18 @@ const server = http.createServer((request, response) => {
 
     case "POST":
       // response.statusCode = 400;
-      const myURL = new URL('https://localhost:8080' + request.url);
-      console.log(myURL.href);
-      console.log(myURL.pathname)
-      console.log(myURL.search);
-      response.write(`CANNOT PUT ${request.url}`);
-      response.end();
+      const myURL = new URL('https://localhost:' + PORT + request.url);
+      try {
+        console.log(myURL.href);
+        console.log(myURL.pathname)
+        console.log(myURL.search);
+        response.write(`posted successfully to ${request.url}`);
+        response.end();
+      }
+      catch (err) {
+        response.end(err.message);
+      }
+
       break;
 
     case "PUT":
