@@ -27,7 +27,11 @@ print(f"Number of labels: {len(cnt)}")
 sorted_dict = dict(sorted(cnt.items(), key=lambda item: item[1], reverse=True))
 top10dict = dict(list(sorted_dict.items())[:10])
 
+plt.figure(figsize=(10, 5))
 plt.bar(top10dict.keys(), top10dict.values())
+plt.xlabel('Labels')
+plt.ylabel('Count')
+plt.title('Top 10 Labels Distribution')
 plt.xticks(rotation=45)
 plt.show()
 
@@ -38,59 +42,228 @@ for filename in os.listdir(directory_path):
     if os.path.isfile(os.path.join(directory_path, filename)):
         name = filename.split("_")[0]
         if name in top10dict:
-            img = cv2.imread(os.path.join(directory_path, filename))
-            img = cv2.resize(img, (224, 224))
-            X.append(img)
+            X.append(cv2.imread(os.path.join(directory_path, filename)))
             y.append(name)
 
-# Display a few images with their labels
-for i in range(10):
-    plt.imshow(cv2.cvtColor(X[i], cv2.COLOR_BGR2RGB))
-    plt.title(f"Label: {y[i]}")
-    plt.axis('off')
-    plt.show()
+# Check Image Shapes
+image_shapes = [img.shape for img in X]
+unique_shapes = set(image_shapes)
+print(f"Unique image shapes: {unique_shapes}")
 
-# Convert to numpy arrays
-X = np.array(X) / 255.0
+# Assuming the images have different shapes, we'll need to resize them to a common size
+# For simplicity, let's assume a common size of (224, 224)
+X_resized = [cv2.resize(img, (224, 224)) for img in X]
 
-# Encode Labels
-label_encoder = LabelEncoder()
-y_encoded = label_encoder.fit_transform(y)
-num_classes = len(np.unique(y_encoded))
+# Calculate Image Statistics
+X_array = np.array(X_resized)
+mean = np.mean(X_array, axis=(0, 1, 2))
+std = np.std(X_array, axis=(0, 1, 2))
+print(f"Image Mean: {mean}")
+print(f"Image Std Dev: {std}")
 
-# Split the Data
-X_train, X_temp, y_train, y_temp = train_test_split(X, y_encoded, test_size=0.4, random_state=42)
-X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5, random_state=42)
+# Plot pixel value distributions for each channel
+plt.figure(figsize=(12, 6))
+colors = ['r', 'g', 'b']
+for i, color in enumerate(colors):
+    plt.hist(X_array[..., i].ravel(), bins=256, color=color, alpha=0.5, label=f'{color} channel')
+plt.xlabel('Pixel Intensity')
+plt.ylabel('Frequency')
+plt.title('Pixel Intensity Distribution')
+plt.legend()
+plt.show()
 
-# Data Generators
-train_datagen = tf.keras.preprocessing.image.ImageDataGenerator()
-val_datagen = tf.keras.preprocessing.image.ImageDataGenerator()
-test_datagen = tf.keras.preprocessing.image.ImageDataGenerator()
+# Display a grid of sample images
+fig, axs = plt.subplots(2, 5, figsize=(15, 6))
+axs = axs.flatten()
+for img, ax, label in zip(X_resized[:10], axs, y[:10]):
+    ax.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+    ax.set_title(f"Label: {label}")
+    ax.axis('off')
+plt.tight_layout()
+plt.show()
 
-train_generator = train_datagen.flow(X_train, y_train, batch_size=16)
-val_generator = val_datagen.flow(X_val, y_val, batch_size=16)
-test_generator = test_datagen.flow(X_test, y_test, batch_size=16)
 
-# Build the Model
-base_model = ResNet50(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
-x = base_model.output
-x = Dropout(0.2)(x)
-x = GlobalAveragePooling2D()(x)
-x = Dense(256, activation='relu')(x)
-x = Dropout(0.3)(x)
-predictions = Dense(num_classes, activation='softmax')(x)
-model = Model(inputs=base_model.input, outputs=predictions)
+# Import necessary libraries
+import seaborn as sns
 
-# Compile the Model
-optimizer = Adam(learning_rate=0.0001)
-model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+# Label Count Distribution
+plt.figure(figsize=(14, 7))
+all_labels = list(cnt.keys())
+all_counts = list(cnt.values())
+sns.barplot(x=all_labels, y=all_counts)
+plt.xlabel('Labels')
+plt.ylabel('Count')
+plt.title('Label Count Distribution')
+plt.xticks(rotation=90)
+plt.show()
 
-# Train the Model
-epochs = 10
+# Image Aspect Ratios
+aspect_ratios = [img.shape[1] / img.shape[0] for img in X]
+plt.figure(figsize=(10, 5))
+plt.hist(aspect_ratios, bins=30)
+plt.xlabel('Aspect Ratio (Width/Height)')
+plt.ylabel('Frequency')
+plt.title('Distribution of Image Aspect Ratios')
+plt.show()
 
-history = model.fit(train_generator, epochs=epochs, validation_data=val_generator)
+# Display a Random Grid of Images
+import random
 
-# Evaluate the Model
-test_loss, test_accuracy = model.evaluate(test_generator)
-print(f'Test Loss: {test_loss:.4f}')
-print(f'Test Accuracy: {test_accuracy:.4f}')
+random_indices = random.sample(range(len(X_resized)), 10)
+fig, axs = plt.subplots(2, 5, figsize=(15, 6))
+axs = axs.flatten()
+for i, ax in zip(random_indices, axs):
+    ax.imshow(cv2.cvtColor(X_resized[i], cv2.COLOR_BGR2RGB))
+    ax.set_title(f"Label: {y[i]}")
+    ax.axis('off')
+plt.tight_layout()
+plt.show()
+
+# Class-wise Mean Image
+class_mean_images = {}
+for label in top10dict.keys():
+    class_images = [X_resized[i] for i in range(len(y)) if y[i] == label]
+    mean_image = np.mean(class_images, axis=0).astype(np.uint8)
+    class_mean_images[label] = mean_image
+
+fig, axs = plt.subplots(2, 5, figsize=(15, 6))
+axs = axs.flatten()
+for ax, (label, mean_image) in zip(axs, class_mean_images.items()):
+    ax.imshow(cv2.cvtColor(mean_image, cv2.COLOR_BGR2RGB))
+    ax.set_title(f"Mean Image: {label}")
+    ax.axis('off')
+plt.tight_layout()
+plt.show()
+
+# Image Size Distribution
+widths = [img.shape[1] for img in X]
+heights = [img.shape[0] for img in X]
+
+plt.figure(figsize=(10, 5))
+plt.hist(widths, bins=30, alpha=0.5, label='Widths')
+plt.hist(heights, bins=30, alpha=0.5, label='Heights')
+plt.xlabel('Size (pixels)')
+plt.ylabel('Frequency')
+plt.title('Distribution of Image Sizes')
+plt.legend()
+plt.show()
+
+# Class-wise Standard Deviation Image
+class_std_images = {}
+for label in top10dict.keys():
+    class_images = [X_resized[i] for i in range(len(y)) if y[i] == label]
+    std_image = np.std(class_images, axis=0).astype(np.uint8)
+    class_std_images[label] = std_image
+
+fig, axs = plt.subplots(2, 5, figsize=(15, 6))
+axs = axs.flatten()
+for ax, (label, std_image) in zip(axs, class_std_images.items()):
+    ax.imshow(cv2.cvtColor(std_image, cv2.COLOR_BGR2RGB))
+    ax.set_title(f"Std Dev Image: {label}")
+    ax.axis('off')
+plt.tight_layout()
+plt.show()
+
+
+
+from sklearn.decomposition import PCA
+
+# Flatten the images
+X_flattened = np.array([img.flatten() for img in X_resized])
+
+# Apply PCA
+pca = PCA(n_components=2)
+X_pca = pca.fit_transform(X_flattened)
+
+# Plot PCA results
+plt.figure(figsize=(10, 7))
+for label in top10dict.keys():
+    indices = [i for i in range(len(y)) if y[i] == label]
+    plt.scatter(X_pca[indices, 0], X_pca[indices, 1], label=label, alpha=0.6)
+plt.xlabel('PCA Component 1')
+plt.ylabel('PCA Component 2')
+plt.title('PCA of Image Data')
+plt.legend()
+plt.show()
+
+
+from sklearn.manifold import TSNE
+
+# Apply T-SNE
+tsne = TSNE(n_components=2, random_state=42)
+X_tsne = tsne.fit_transform(X_flattened)
+
+# Plot T-SNE results
+plt.figure(figsize=(10, 7))
+for label in top10dict.keys():
+    indices = [i for i in range(len(y)) if y[i] == label]
+    plt.scatter(X_tsne[indices, 0], X_tsne[indices, 1], label=label, alpha=0.6)
+plt.xlabel('T-SNE Component 1')
+plt.ylabel('T-SNE Component 2')
+plt.title('T-SNE of Image Data')
+plt.legend()
+plt.show()
+
+
+
+# Compute the correlation matrix
+X_flattened_normalized = X_flattened / 255.0  # Normalize pixel values
+correlation_matrix = np.corrcoef(X_flattened_normalized, rowvar=False)
+
+# Plot correlation matrix
+plt.figure(figsize=(12, 10))
+sns.heatmap(correlation_matrix, cmap='viridis')
+plt.title('Correlation Matrix of Pixel Values')
+plt.show()
+
+
+
+# Plot class-wise pixel intensity distributions
+plt.figure(figsize=(15, 10))
+for i, label in enumerate(top10dict.keys()):
+    plt.subplot(2, 5, i+1)
+    class_images = [X_resized[j] for j in range(len(y)) if y[j] == label]
+    class_pixel_values = np.array(class_images).ravel()
+    plt.hist(class_pixel_values, bins=256, color='gray', alpha=0.7)
+    plt.title(f'{label}')
+    plt.xlabel('Pixel Intensity')
+    plt.ylabel('Frequency')
+plt.tight_layout()
+plt.show()
+
+
+
+# Apply edge detection
+edges = [cv2.Canny(img, 100, 200) for img in X_resized]
+
+# Display edge-detected images
+fig, axs = plt.subplots(2, 5, figsize=(15, 6))
+axs = axs.flatten()
+for i, ax in zip(range(10), axs):
+    ax.imshow(edges[i], cmap='gray')
+    ax.set_title(f"Label: {y[i]}")
+    ax.axis('off')
+plt.tight_layout()
+plt.show()
+
+
+
+# Calculate brightness and contrast
+brightness = [np.mean(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)) for img in X_resized]
+contrast = [np.std(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)) for img in X_resized]
+
+# Plot brightness distribution
+plt.figure(figsize=(10, 5))
+plt.hist(brightness, bins=30, color='blue', alpha=0.7)
+plt.xlabel('Brightness')
+plt.ylabel('Frequency')
+plt.title('Distribution of Image Brightness')
+plt.show()
+
+# Plot contrast distribution
+plt.figure(figsize=(10, 5))
+plt.hist(contrast, bins=30, color='red', alpha=0.7)
+plt.xlabel('Contrast')
+plt.ylabel('Frequency')
+plt.title('Distribution of Image Contrast')
+plt.show()
