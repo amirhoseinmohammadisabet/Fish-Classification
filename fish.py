@@ -1,15 +1,11 @@
-import tensorflow as tf
-from tensorflow import keras
 import numpy as np
 import cv2
 import os
 import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
-from tensorflow.keras.applications import ResNet50
-from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Dropout
-from tensorflow.keras.models import Model
-from tensorflow.keras.optimizers import Adam
-from sklearn.preprocessing import LabelEncoder
+import seaborn as sns
+import random
+from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
 
 # Directory Path
 directory_path = "Data/Fish_Data/images/cropped/"
@@ -83,9 +79,6 @@ plt.tight_layout()
 plt.show()
 
 
-# Import necessary libraries
-import seaborn as sns
-
 # Label Count Distribution
 plt.figure(figsize=(14, 7))
 all_labels = list(cnt.keys())
@@ -106,8 +99,6 @@ plt.ylabel('Frequency')
 plt.title('Distribution of Image Aspect Ratios')
 plt.show()
 
-# Display a Random Grid of Images
-import random
 
 random_indices = random.sample(range(len(X_resized)), 10)
 fig, axs = plt.subplots(2, 5, figsize=(15, 6))
@@ -165,9 +156,6 @@ plt.tight_layout()
 plt.show()
 
 
-
-from sklearn.decomposition import PCA
-
 # Flatten the images
 X_flattened = np.array([img.flatten() for img in X_resized])
 
@@ -186,36 +174,23 @@ plt.title('PCA of Image Data')
 plt.legend()
 plt.show()
 
+def tsne():
+    # Apply T-SNE
+    tsne = TSNE(n_components=2, random_state=42)
+    X_tsne = tsne.fit_transform(X_flattened)
 
-from sklearn.manifold import TSNE
+    # Plot T-SNE results
+    plt.figure(figsize=(10, 7))
+    for label in top10dict.keys():
+        indices = [i for i in range(len(y)) if y[i] == label]
+        plt.scatter(X_tsne[indices, 0], X_tsne[indices, 1], label=label, alpha=0.6)
+    plt.xlabel('T-SNE Component 1')
+    plt.ylabel('T-SNE Component 2')
+    plt.title('T-SNE of Image Data')
+    plt.legend()
+    plt.show()
 
-# Apply T-SNE
-tsne = TSNE(n_components=2, random_state=42)
-X_tsne = tsne.fit_transform(X_flattened)
-
-# Plot T-SNE results
-plt.figure(figsize=(10, 7))
-for label in top10dict.keys():
-    indices = [i for i in range(len(y)) if y[i] == label]
-    plt.scatter(X_tsne[indices, 0], X_tsne[indices, 1], label=label, alpha=0.6)
-plt.xlabel('T-SNE Component 1')
-plt.ylabel('T-SNE Component 2')
-plt.title('T-SNE of Image Data')
-plt.legend()
-plt.show()
-
-
-
-# Compute the correlation matrix
-X_flattened_normalized = X_flattened / 255.0  # Normalize pixel values
-correlation_matrix = np.corrcoef(X_flattened_normalized, rowvar=False)
-
-# Plot correlation matrix
-plt.figure(figsize=(12, 10))
-sns.heatmap(correlation_matrix, cmap='viridis')
-plt.title('Correlation Matrix of Pixel Values')
-plt.show()
-
+# tsne()
 
 
 # Plot class-wise pixel intensity distributions
@@ -266,4 +241,24 @@ plt.hist(contrast, bins=30, color='red', alpha=0.7)
 plt.xlabel('Contrast')
 plt.ylabel('Frequency')
 plt.title('Distribution of Image Contrast')
+plt.show()
+
+
+
+# Downsample images to reduce dimensions
+X_downsampled = [cv2.resize(img, (56, 56)) for img in X_resized]  # Example: Downsampling to 56x56
+
+# Flatten the downsampled images
+X_flattened_downsampled = np.array([img.flatten() for img in X_downsampled])
+
+# Normalize pixel values
+X_flattened_downsampled_normalized = X_flattened_downsampled / 255.0
+
+# Compute the correlation matrix
+correlation_matrix_downsampled = np.corrcoef(X_flattened_downsampled_normalized, rowvar=False)
+
+# Plot correlation matrix
+plt.figure(figsize=(12, 10))
+sns.heatmap(correlation_matrix_downsampled, cmap='viridis')
+plt.title('Correlation Matrix of Downsampled Pixel Values')
 plt.show()
