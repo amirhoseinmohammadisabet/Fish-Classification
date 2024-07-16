@@ -83,7 +83,7 @@ reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=5, min_lr
 
 # Train the model
 history = model.fit(X_train, y_train, 
-                    epochs=50, 
+                    epochs=10, 
                     validation_data=(X_test, y_test), 
                     batch_size=32, 
                     callbacks=[early_stopping, reduce_lr])
@@ -106,9 +106,12 @@ plt.legend(['Train', 'Validation'], loc='upper left')
 plt.subplot(1, 2, 2)
 plt.plot(history.history['loss'])
 plt.plot(history.history['val_loss'])
+
 plt.title('Model loss')
 plt.ylabel('Loss')
 plt.xlabel('Epoch')
 plt.legend(['Train', 'Validation'], loc='upper left')
 
 plt.show()
+
+# Test Accuracy: 39.77%

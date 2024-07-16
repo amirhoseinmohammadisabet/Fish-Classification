@@ -100,4 +100,5 @@ plt.legend(['Train', 'Validation'], loc='upper left')
 
 plt.show()
 
-#75.50%
+#80% with 20 epoch
+#75.50% with 50 epoch
