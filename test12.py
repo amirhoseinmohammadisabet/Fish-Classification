@@ -11,6 +11,7 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.applications import EfficientNetB0
 from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping, LearningRateScheduler
 import matplotlib.pyplot as plt
+import tensorflow as tf
 
 # Directory Path    
 directory_path = "Data/Fish_Data/images/cropped/"
@@ -132,3 +133,5 @@ plt.xlabel('Epoch')
 plt.legend(['Train', 'Validation'], loc='upper left')
 
 plt.show()
+
+#Test Accuracy: 14.70%
