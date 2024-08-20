@@ -9,7 +9,7 @@ from sklearn.preprocessing import LabelBinarizer
 directory_path = "Data/Fish_Data/images/cropped/"
 
 # Image dimensions
-img_width, img_height = 224, 224
+img_width, img_height = 200, 200
 
 # Load the images and labels
 images = []
@@ -104,3 +104,4 @@ history_fine = model.fit(
 # Evaluate the model on the test data
 test_loss, test_accuracy = model.evaluate(test_generator, steps=len(test_generator))
 print('Test Accuracy:', test_accuracy)
+

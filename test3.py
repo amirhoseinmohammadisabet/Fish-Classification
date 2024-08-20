@@ -22,7 +22,7 @@ labels = []
 for filename in os.listdir(directory_path):
     if os.path.isfile(os.path.join(directory_path, filename)):
         label = filename.split("_")[0]
-        image = load_img(os.path.join(directory_path, filename), target_size=(224, 224))
+        image = load_img(os.path.join(directory_path, filename), target_size=(128, 128))
         image = img_to_array(image)
         data.append(image)
         labels.append(label)
@@ -56,7 +56,7 @@ train_generator = train_datagen.flow(X_train, y_train, batch_size=32)
 test_generator = test_datagen.flow(X_test, y_test, batch_size=32)
 
 # Load the EfficientNetB0 model with pre-trained weights
-base_model = EfficientNetB0(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
+base_model = EfficientNetB0(weights='imagenet', include_top=False, input_shape=(128, 128, 3))
 
 # Add custom layers on top of the base model
 x = base_model.output
@@ -114,3 +114,5 @@ y_pred = model.predict(test_generator)
 y_pred_classes = np.argmax(y_pred, axis=1)
 y_true_classes = np.argmax(y_test, axis=1)
 print(classification_report(y_true_classes, y_pred_classes, target_names=lb.classes_))
+
+#shity
