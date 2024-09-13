@@ -36,8 +36,8 @@ for filename in os.listdir(directory_path):
             X.append(cv2.imread(os.path.join(directory_path, filename)))
             y.append(name)
 
-# Resize images to a common size (320 for faster processing)
-X_resized = [cv2.resize(img, (320, 320)) for img in X]
+# Resize images to a common size (200 for faster processing)
+X_resized = [cv2.resize(img, (200, 200)) for img in X]
 X_array = np.array(X_resized)
 y_array = np.array(y)
 
@@ -65,7 +65,7 @@ datagen = ImageDataGenerator(
 datagen.fit(X_train)
 
 # Load VGG16 model with adjusted input shape
-base_model = VGG16(weights='imagenet', include_top=False, input_shape=(320, 320, 3))
+base_model = VGG16(weights='imagenet', include_top=False, input_shape=(200, 200, 3))
 base_model.trainable = False  # Freeze the base model
 
 # Add custom layers on top

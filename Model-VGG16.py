@@ -3,16 +3,14 @@ import cv2
 import os
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import confusion_matrix
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Flatten, Dense, Dropout
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.keras.applications import ResNet50
+from tensorflow.keras.applications import VGG16
 from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping
 import matplotlib.pyplot as plt
-import seaborn as sns
 
 # Directory Path    
 directory_path = "Data/Fish_Data/images/cropped/"
@@ -64,8 +62,8 @@ datagen = ImageDataGenerator(
 )
 datagen.fit(X_train)
 
-# Build the CNN model with transfer learning (ResNet50)
-base_model = ResNet50(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
+# Build the CNN model with transfer learning (VGG16)
+base_model = VGG16(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
 base_model.trainable = False
 
 model = Sequential([
@@ -96,17 +94,9 @@ history = model.fit(datagen.flow(X_train, y_train, batch_size=32),
 test_loss, test_accuracy = model.evaluate(X_test, y_test)
 print(f"Test Accuracy: {test_accuracy * 100:.2f}%")
 
-# Predict the labels for the test set
-y_pred = model.predict(X_test)
-y_pred_classes = np.argmax(y_pred, axis=1)
-y_true = np.argmax(y_test, axis=1)
-
-# Compute the confusion matrix
-conf_matrix = confusion_matrix(y_true, y_pred_classes)
-
 # Plot training & validation accuracy values
-plt.figure(figsize=(18, 6))
-plt.subplot(1, 3, 1)
+plt.figure(figsize=(12, 4))
+plt.subplot(1, 2, 1)
 plt.plot(history.history['accuracy'])
 plt.plot(history.history['val_accuracy'])
 plt.title('Model accuracy')
@@ -115,7 +105,7 @@ plt.xlabel('Epoch')
 plt.legend(['Train', 'Validation'], loc='upper left')
 
 # Plot training & validation loss values
-plt.subplot(1, 3, 2)
+plt.subplot(1, 2, 2)
 plt.plot(history.history['loss'])
 plt.plot(history.history['val_loss'])
 plt.title('Model loss')
@@ -123,12 +113,4 @@ plt.ylabel('Loss')
 plt.xlabel('Epoch')
 plt.legend(['Train', 'Validation'], loc='upper left')
 
-# Plot confusion matrix
-plt.subplot(1, 3, 3)
-sns.heatmap(conf_matrix, annot=True, fmt="d", cmap='Blues', xticklabels=label_encoder.classes_, yticklabels=label_encoder.classes_)
-plt.title('Confusion Matrix')
-plt.ylabel('True Label')
-plt.xlabel('Predicted Label')
-
-plt.tight_layout()
 plt.show()

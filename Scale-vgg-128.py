@@ -148,7 +148,7 @@ plt.show()
 class_report = classification_report(y_true, y_pred_classes, target_names=label_encoder.classes_)
 print('Classification Report:\n', class_report)
 
-#Test Accuracy: 85.59%
+#Test Accuracy: 82.30%
 """
 Classification Report:
                 precision    recall  f1-score   support
